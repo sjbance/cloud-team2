@@ -68,7 +68,7 @@ router.post("/mortgage", getToken, function(req, res){
 	delete req.user.id;
 	req.user.mortId = req.body.mortId;
 	request({url: mbrPath, method:"POST", json:req.user}, function(err, response, body){
-		if (response.statusCode != 200) {
+		if (err || response.statusCode != 200) {
 			sendErr(res, "Error recieved from MBR");
 		} else {
 			sendSuccess(res);

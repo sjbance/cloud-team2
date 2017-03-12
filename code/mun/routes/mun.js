@@ -1,4 +1,4 @@
-// Interactions with the life insurance web service/DB
+// Interactions with MUN web service/DB
 
 var jwt = require("jwt-simple");
 var router = require("express").Router();
@@ -11,6 +11,7 @@ AWS.config.update({
 require("dotenv").load();
 var docClient = new AWS.DynamoDB.DocumentClient();
 var currStep;
+var unknownHouseCode = "ZZZ";
 
 const tableName = "MUN";
 const insPath = process.env.INS_PATH;
@@ -133,7 +134,6 @@ router.post("/insurance", function(req, res){
 		}
 		request({url: insPath, method:"POST", json:params}, function(err, response, body){
 			if (err || response.statusCode != 200) {
-				console.log(err);
 				sendErr(res, "Error recieved from INS");
 			} else {
 				sendSuccess(res);
@@ -146,7 +146,8 @@ router.post("/insurance", function(req, res){
 function getItem(res, params, callback){
 	docClient.get(params, function(err, data) {
 		if (!data || !data.Item){
-			sendErr(res, "Item not found");
+			// Send default service code for unknown house ID
+			callback({"serviceCode": unknownHouseCode});
 		}
 		else if (err) {
 			sendErr(res, err);

@@ -84,7 +84,7 @@
 				mortId : mortId,
 				token : window.sessionStorage.accessToken
 			}
-			sendRequest("/emp/sendinfo", "post", data, function(res) {
+			sendRequest("/emp/mortgage", "post", data, function(res) {
 				$("#formArea").empty();
 				$("#formArea").append("Success!");
 			});
