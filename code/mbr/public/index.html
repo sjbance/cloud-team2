@@ -46,7 +46,7 @@
 			console.log('submitting');
 			
 			$.ajax({
-				url: '/api/mbr/login',
+				url: '/api/auth/login',
 				type: 'POST',
 				contentType: 'application/json',
 				data: JSON.stringify({
@@ -56,7 +56,7 @@
 			}).done(function(data){
 					console.log(data);
 					localStorage.setItem('mbr_token', data.token);
-					window.location.href = "/mbr/form.html";
+					window.location.href = "/form.html";
 				})
 				.fail(function(){
 					console.log('Failed');

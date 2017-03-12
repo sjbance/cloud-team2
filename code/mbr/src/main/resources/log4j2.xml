@@ -9,6 +9,11 @@
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level [%t] %logger: %msg%n" />
 		</Console>
+		<File name="InvocationAppender" filename="${dir}/invocations.log">
+			<PatternLayout>
+				<Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %msg%n</Pattern>
+			</PatternLayout>
+		</File>
 		<RollingFile name="RollingFile" fileName="${dir}/today.log"
 			filePattern="${dir}/%d{yyyy-MM-dd}.log.gz">
 			<PatternLayout>
@@ -29,9 +34,12 @@
 	
 	<Loggers>
 		<!-- additivity=false prevents duplicated messages -->
-		<Logger name="ca.danielstout" level="DEBUG" additivity="false">
+		<Logger name="ca.dal" level="DEBUG" additivity="false">
 			<AppenderRef ref="Console" />
 			<AppenderRef ref="RollingFile" />
+		</Logger>
+		<Logger name="invocation" level="DEBUG" additivity="false">
+			<AppenderRef ref="InvocationAppender" />
 		</Logger>
 		
 		<Root level="WARN">

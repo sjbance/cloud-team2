@@ -4,10 +4,10 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>ca.dal.csci4145.team2</groupId>
-	<artifactId>part-a</artifactId>
+	<artifactId>mbr</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0</version>
-	<name>part-a</name>
+	<version>1.1</version>
+	<name>mbr</name>
 
 	<dependencyManagement>
 		<dependencies>

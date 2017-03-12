@@ -5,18 +5,15 @@ CREATE TABLE users
 	hashed_password TEXT
 );
 
-CREATE TABLE mbr_applications
+CREATE TABLE applications
 (
 	id SERIAL PRIMARY KEY,
-	user_id INT NOT NULL REFERENCES mbr_users(id),
+	user_id INT NOT NULL REFERENCES users(id),
 	name TEXT,
-	address TEXT,
-	phone_number TEXT,
-	employer TEXT,
-	life_insurance TEXT,
-	job_title TEXT,
-	job_salary NUMERIC,
-	job_years INT,
-	life_policy_id TEXT,
-	life_policy_value NUMERIC
+	mortgage_value NUMERIC,
+	house_id TEXT,
+	salary NUMERIC,
+	start_of_employment TEXT,
+	insured_value NUMERIC,
+	deductible NUMERIC
 );

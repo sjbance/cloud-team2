@@ -2,12 +2,10 @@ package ca.dal.csci4145.team2.resources;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-import javax.validation.ConstraintViolation;
-import javax.validation.Path.Node;
-import javax.ws.rs.BadRequestException;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
@@ -24,6 +22,8 @@ import org.sql2o.Connection;
 
 import ca.dal.csci4145.team2.Main;
 import ca.dal.csci4145.team2.StringUtils;
+import ca.dal.csci4145.team2.ValidatorUtils;
+import ca.dal.csci4145.team2.resources.AuthResource.User;
 
 @Path("mbr")
 @Produces(MediaType.APPLICATION_JSON)
@@ -39,46 +39,60 @@ public class MbrResource
 		@NotBlank
 		public String name;
 
-		@NotBlank
-		public String address;
+		@NotNull
+		@Min(1)
+		public Double mortgageValue;
 
 		@NotBlank
-		public String phone;
+		public String houseId;
 
-		@NotBlank
-		public String employer;
-
-		@NotBlank
-		public String lifeInsurance;
+		@Override
+		public String toString()
+		{
+			return StringUtils.makeToString(this);
+		}
 	}
 
 	public static class ApplyResp
 	{
-		public int applicationId;
-	}
+		public int mortId;
 
-	private <T> void validateObject(T obj)
-	{
-		if (obj == null) throw new BadRequestException();
-
-		String err = Main.validator.validate(obj).stream()
-			.map(v -> msgForViol(v))
-			.collect(Collectors.joining(" "));
-
-		if (err.isEmpty()) return;
-		Response resp = Response.status(400).entity(err).build();
-		throw new BadRequestException(resp);
-	}
-
-	private String msgForViol(ConstraintViolation<?> viol)
-	{
-		Node last = null;
-		for (Node obj : viol.getPropertyPath())
+		@Override
+		public String toString()
 		{
-			last = obj;
-		}
+			return StringUtils.makeToString(this);
+		};
+	}
 
-		return String.format("Property '%s' %s. ", last.getName(), viol.getMessage());
+	@POST
+	@Path("apply")
+	public Response makeApplication(MortgageReq req)
+	{
+		LogResource.logStartInternal("MBR", "Received Mortgage Application Request", req);
+
+		User user = getUserOrThrow();
+
+		ValidatorUtils.throwIfInvalid(req);
+
+		String sql = ""
+			+ "INSERT INTO applications(user_id, name, mortgage_value, house_id) "
+			+ "VALUES (:userid, :name, :mortval, :houseid) "
+			+ "RETURNING id";
+
+		try (Connection con = Main.sql2o.open())
+		{
+			int id = con.createQuery(sql)
+				.addParameter("userid", user.id)
+				.addParameter("name", req.name)
+				.addParameter("mortval", req.mortgageValue)
+				.addParameter("houseid", req.houseId)
+				.executeScalar(Integer.class);
+
+			ApplyResp resp = new ApplyResp();
+			resp.mortId = id;
+			LogResource.logEndInternal("MBR", "Application created");
+			return Response.ok().entity(resp).build();
+		}
 	}
 
 	public static class MbrApplication
@@ -86,24 +100,27 @@ public class MbrResource
 		public int id;
 		public int userId;
 		public String name;
-		public String address;
-		public String phoneNumber;
-		public String employer;
-		public String lifeInsurance;
-		public String jobTitle;
-		public Double jobSalary;
-		public Integer jobYears;
-		public String lifePolicyId;
-		public Double lifePolicyValue;
+		public Double mortgageValue;
+		public String houseId;
+		public Double salary;
+		public String startOfEmployment;
+		public Double insuredValue;
+		public Double deductible;
+
+		@Override
+		public String toString()
+		{
+			return StringUtils.makeToString(this);
+		}
 	}
-	
-	private String getUserOrThrow()
+
+	private User getUserOrThrow()
 	{
-		return getUsername(request)
+		return getUser(request)
 			.orElseThrow(() -> new NotAuthorizedException(Response.status(401).build()));
 	}
 
-	public static Optional<String> getUsername(ContainerRequestContext ctx)
+	public static Optional<User> getUser(ContainerRequestContext ctx)
 	{
 		String header = ctx.getHeaderString("Authorization");
 		if (header == null)
@@ -118,127 +135,120 @@ public class MbrResource
 			return Optional.empty();
 		}
 		String token = parts[1];
-		return AuthResource.getUser(token).map(u -> u.username);
+		return AuthResource.getUser(token);
 	}
 
 	@GET
 	@Path("applications")
 	public List<MbrApplication> getApplications()
 	{
-		String user = getUserOrThrow();
+		LogResource.logStartInternal("MBR", "Getting Applications", null);
+
+		User user = getUserOrThrow();
 
 		try (Connection con = Main.sql2o.open())
 		{
 			String sql = ""
-				+ "SELECT * FROM mbr_applications "
-				+ "WHERE user_id = (SELECT id FROM mbr_users WHERE username = :user)";
+				+ "SELECT * FROM applications "
+				+ "WHERE user_id = :uid";
 
 			List<MbrApplication> apps = con.createQuery(sql)
-				.addParameter("user", user)
+				.addParameter("uid", user.id)
 				.setAutoDeriveColumnNames(true)
 				.executeAndFetch(MbrApplication.class);
 
 			log.debug("Found {} applications", apps.size());
+			LogResource.logEndInternal("MBR", "Retrieved applications");
 			return apps;
 		}
 	}
 
 	public static class InsurerInfoReq
 	{
-		public int mortgageApplicationId;
-		public String policyId;
-		public Double policyValue;
+		public int mortId;
+		public Double insuredValue;
+		public Double deductible;
+		public String name;
+
+		@Override
+		public String toString()
+		{
+			return StringUtils.makeToString(this);
+		}
 	}
 
 	@POST
 	@Path("insurer")
 	public Response receiveInsuranceInfo(InsurerInfoReq req)
 	{
+		LogResource.logStartInternal("MBR", "Received insurance info", req);
+
 		log.debug("Received insurance info: {}", StringUtils.makeToString(req));
 
 		try (Connection con = Main.sql2o.open())
 		{
 			String sql = ""
-				+ "UPDATE mbr_applications SET "
-				+ "life_policy_id = :polId, "
-				+ "life_policy_value = :polVal "
+				+ "UPDATE applications SET "
+				+ "insured_value = :insur, "
+				+ "deductible = :deduct "
 				+ "WHERE id = :id";
 
 			int updated = con.createQuery(sql)
-				.addParameter("polId", req.policyId)
-				.addParameter("polVal", req.policyValue)
-				.addParameter("id", req.mortgageApplicationId)
+				.addParameter("insur", req.insuredValue)
+				.addParameter("deduct", req.deductible)
+				.addParameter("id", req.mortId)
 				.executeUpdate()
 				.getResult();
 
 			log.debug("Updated {} rows", updated);
-			return updated == 1 ? Response.ok().build() : Response.status(400).build();
+			boolean ok = updated == 1;
+
+			LogResource.logEndInternal("MBR", "Insurance info successfully stored in DB: " + ok);
+
+			return ok ? Response.ok().build() : Response.status(400).build();
 		}
 	}
 
 	public static class EmployerInfoReq
 	{
-		public int mortgageApplicationId;
-		public String jobTitle;
-		public Double jobSalary;
-		public Integer jobYears;
+		public int mortId;
+		public String name;
+		public Double salary;
+		public String startOfEmployment;
+
+		@Override
+		public String toString()
+		{
+			return StringUtils.makeToString(this);
+		}
 	}
 
 	@POST
 	@Path("employer")
 	public Response receiveEmployerInfo(EmployerInfoReq req)
 	{
+		LogResource.logStartInternal("MBR", "Received Employer info", req);
 		log.debug("Received employer info: {}", StringUtils.makeToString(req));
 
 		try (Connection con = Main.sql2o.open())
 		{
 			String sql = ""
-				+ "UPDATE mbr_applications SET "
-				+ "job_title = :title, "
-				+ "job_salary = :salary, "
-				+ "job_years = :years "
-				+ "WHERE id = :id";
+				+ "UPDATE applications SET "
+				+ "salary = :salary, "
+				+ "start_of_employment = :stofempl "
+				+ "WHERE id = :mortid";
 
 			int updated = con.createQuery(sql)
-				.addParameter("title", req.jobTitle)
-				.addParameter("salary", req.jobSalary)
-				.addParameter("years", req.jobYears)
-				.addParameter("id", req.mortgageApplicationId)
+				.addParameter("salary", req.salary)
+				.addParameter("stofempl", req.startOfEmployment)
+				.addParameter("mortid", req.mortId)
 				.executeUpdate()
 				.getResult();
 
 			log.debug("Updated {} rows", updated);
-			return updated == 1 ? Response.ok().build() : Response.status(400).build();
-		}
-	}
-
-	@POST
-	@Path("apply")
-	public Response process(MortgageReq req)
-	{
-		String user = getUserOrThrow();
-
-		validateObject(req);
-
-		String sql = ""
-			+ "INSERT INTO mbr_applications(user_id, name, address, phone_number, employer, life_insurance) "
-			+ "VALUES ((SELECT id FROM mbr_users WHERE username = :user), :name, :addr, :phone, :empl, :life) "
-			+ "RETURNING id";
-
-		try (Connection con = Main.sql2o.open())
-		{
-			int id = con.createQuery(sql)
-				.addParameter("user", user)
-				.addParameter("name", req.name)
-				.addParameter("addr", req.address)
-				.addParameter("phone", req.phone)
-				.addParameter("empl", req.employer)
-				.addParameter("life", req.lifeInsurance)
-				.executeScalar(Integer.class);
-
-			ApplyResp resp = new ApplyResp();
-			resp.applicationId = id;
-			return Response.ok().entity(resp).build();
+			boolean ok = updated == 1;
+			LogResource.logEndInternal("MBR", "Employer info stored in DB successfully: " + ok);
+			return ok ? Response.ok().build() : Response.status(400).build();
 		}
 	}
 }
