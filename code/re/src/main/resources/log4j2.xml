@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Layout specifiers: https://logging.apache.org/log4j/2.x/manual/layouts.html -->
+
+<Configuration status="WARN"> <!-- Only log warnings from Log4j itself -->
+	<Properties>
+		<property name="dir">logs</property>
+	</Properties>
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level [%t] %logger: %msg%n" />
+		</Console>
+		<RollingFile name="RollingFile" fileName="${dir}/today.log"
+			filePattern="${dir}/%d{yyyy-MM-dd}.log.gz">
+			<PatternLayout>
+				<Pattern>%d{HH:mm:ss.SSS} %-5level [%t] %logger: %msg%ex{5}%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy>
+				<Delete basePath="${dir}">
+					<IfFileName glob="*.log.gz">
+						<IfLastModified age="30d"/>
+					</IfFileName>
+				</Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+	</Appenders>
+	
+	<Loggers>
+		<!-- additivity=false prevents duplicated messages -->
+		<Logger name="ca.dal" level="DEBUG" additivity="false">
+			<AppenderRef ref="Console" />
+			<AppenderRef ref="RollingFile" />
+		</Logger>
+		<Root level="WARN">
+			<AppenderRef ref="Console" />
+			<AppenderRef ref="RollingFile" />
+		</Root>
+	</Loggers>
+</Configuration>
