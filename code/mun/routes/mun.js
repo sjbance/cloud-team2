@@ -13,8 +13,7 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var currStep;
 
 const tableName = "MUN";
-//const insPath = process.env.INS_PATH;
-const insPath = "https://localhost:3000/mun/test";
+const insPath = process.env.INS_PATH;
 const logPathStart = process.env.LOG_PATH + "/start";
 const logPathEnd = process.env.LOG_PATH + "/end";
 
@@ -133,18 +132,13 @@ router.post("/insurance", function(req, res){
 				"serviceCode" : data.serviceCode				
 		}
 		request({url: insPath, method:"POST", json:params}, function(err, response, body){
-			if (response.statusCode != 200) {
+			if (err || response.statusCode != 200) {
+				console.log(err);
 				sendErr(res, "Error recieved from INS");
 			} else {
 				sendSuccess(res);
 			}
 		});	
-	});
-});
-
-router.post("/test", function(req,res){
-	res.status(200).json({
-		success: true,
 	});
 });
 

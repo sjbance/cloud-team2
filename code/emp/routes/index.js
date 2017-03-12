@@ -1,8 +1,7 @@
-// Routing for 3 company pages (life insurance, mortgage, employer)
+// Routing for EMP
 
 var express = require('express'), router = express.Router();
 
-router.use('/mun', require('./mun'));
 router.use('/emp', require('./emp'));
 
 // EMP pages
