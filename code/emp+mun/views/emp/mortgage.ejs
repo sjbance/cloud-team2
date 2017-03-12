@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" href="/stylesheets/emp.css">
+<link href="https://fonts.googleapis.com/css?family=Roboto|Glegoo|Rubik"
+    rel="stylesheet">
+<head>
+<title>EMP</title>
+</head>
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="/jquery.form.js"></script>
+<script>
+	// Validate fields
+	function validateId(id) {
+		var patt = /^[0-9]+$/;
+		return (patt.test(id));
+	}
+
+	// Construct/display 'Agree' form
+	function agreeForm(res) {
+		window.sessionStorage.accessToken = res.data.token;
+		$("#formArea").empty();
+		var form = ("<form id='agreeForm'>Mortgage ID: <input type='text' id='mortId'><p><button id='agreeBtn'>Agree</button></form>");
+		$("#formArea")
+				.append(
+						"Please enter your mortgage application ID. By clicking 'Agree', you consent to us sending your municipal service code to your insurance company.<p>");
+		$("#formArea").append(form);
+	}
+
+	// Send ajax request
+	function sendRequest(url, method, data, callback) {
+		var request = $.ajax({
+			method : method,
+			url : url,
+			dataType : 'json',
+			data : data
+		}).fail(function(err) {
+			error(err);
+		}).done(function(res) {
+			callback(res);
+		});
+	};
+
+	// Error message
+	function error(err) {
+		alert("Error completing request");
+		return false;
+	}
+
+	// Wait for document to be prepared
+	$(document).ready(function() {
+		// Form submissions
+
+		// Disable default form submissions (using Ajax instead)
+		$("#formArea").on("submit", "#idForm", function(e) {
+			e.preventDefault();
+		})
+		$("#formArea").on("submit", "#agreeForm", function(e) {
+			e.preventDefault();
+		})
+
+		// Submit employee ID for authentication
+		$("#formArea").on("click", "#submitIdFormBtn", function() {
+			var id = $("#idForm #id").val();
+			if (!validateId(id)) {
+				error(new Error());
+				return;
+			}
+			var data = {
+				id : id,
+				password : $('#idForm #password').val()
+			}
+			sendRequest("/emp/authenticate", "post", data, agreeForm);
+		});
+
+		// Submit agreement with mortgage application ID
+		$("#formArea").on("click", "#agreeBtn", function() {
+			var mortId = $("#agreeForm #mortId").val();
+			if (!validateId(mortId)) {
+				error(new Error());
+				return;
+			}
+			var data = {
+				mortId : mortId,
+				token : window.sessionStorage.accessToken
+			}
+			sendRequest("/emp/sendinfo", "post", data, function(res) {
+				$("#formArea").empty();
+				$("#formArea").append("Success!");
+			});
+		});
+
+		// Display sending status
+		$(document).ajaxStart(function() {
+			$("#status").css("display", "block");
+		});
+
+		$(document).ajaxComplete(function() {
+			$("#status").css("display", "none");
+		});
+	});
+</script>
+<body>
+	<div class='nav'>
+		<ul>
+			<li><a href="/emp">HOME</a></li>
+			<li><a href="/emp/mortgage" class="active">MORTGAGES</a></li>
+		</ul>
+	</div>
+	<div class='title'>
+		<h1>JOBS INC.</h1>
+	</div>
+	<div class='section'>
+		<h2>send forms</h2>
+		<div id="formArea">
+			<p>
+				Enter your employee ID and password to authenticate.
+			</p>
+			<p>
+			<form id="idForm">
+				<table align="center">
+					<tr>
+						<td align="right">Employee ID:</td>
+						<td align="left"><input type="text" id="id" pattern="\d+"
+							required /></td>
+					</tr>
+					<tr>
+						<td align="right">Password:</td>
+						<td align="left"><input type="password" id="password"
+							required /></td>
+					</tr>
+				</table>
+				<p>
+					<button id="submitIdFormBtn">Submit</button>
+				</p>
+			</form>
+		</div>
+		<div id="status" style='display: none'>Sending...</div>
+		<br>
+	</div>
+	<br>
+</body>
+</html>
