@@ -1,0 +1,70 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Real Estate Agent</title>
+<link
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="//cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css">
+</head>
+
+<body>
+	<div class="container">
+		<h1>Real Estate Agent (RE)</h1>
+		
+		<div class="panel panel-primary">
+			<div class="panel-heading">Login</div>
+			<div class="panel-body">
+				<form>
+					<div class="form-group">
+						<label>Username</label>
+						<input type="text" class="form-control" id="username">
+					</div>
+					
+					<div class="form-group">
+						<label>Password</label>
+						<input type="password" class="form-control" id="password">
+					</div>
+					
+					<button class="btn btn-primary">Login</button>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<script
+		src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+		integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+		crossorigin="anonymous"></script>
+	<script>
+		$('form').on('submit', function(event){
+			event.preventDefault();
+			console.log('submitting');
+			
+			$.ajax({
+				url: 'https://mbr.danielstout.ca/api/auth/login',
+				type: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify({
+					user: $('#username').val(),
+					pass: $('#password').val()
+				})
+			}).done(function(data){
+					console.log(data);
+					localStorage.setItem('mbr_token', data.token);
+					window.location.href = "/form.html";
+				})
+				.fail(function(){
+					console.log('Failed');
+					alert("Invalid password, please try again");
+				});
+		});
+	
+
+	</script>
+</body>
+</html>

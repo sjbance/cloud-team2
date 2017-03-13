@@ -1,0 +1,49 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Success</title>
+<link
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="//cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css">
+</head>
+
+<body>
+	<div class="container">
+		<h1>Real Estate Agent (RE)</h1>
+		
+		<h2>Appraisal Request Submitted Successfully</h2>
+		
+		<p>We will be sending the result of the appraisal to your insurance company, as well as the municipal government so they can provide information to your insurer.</p>
+		
+		<a href="/form.html" class="btn btn-primary">Back To Listing</a> 
+	</div>
+
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<script
+		src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+		integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+		crossorigin="anonymous"></script>
+	<script>
+		// http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+		(function($) {
+		    $.QueryString = (function(a) {
+		        if (a == "") return {};
+		        var b = {};
+		        for (var i = 0; i < a.length; ++i)
+		        {
+		            var p=a[i].split('=', 2);
+		            if (p.length != 2) continue;
+		            b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+		        }
+		        return b;
+		    })(window.location.search.substr(1).split('&'))
+		})(jQuery);
+	
+		$('#app-id').text($.QueryString["id"]);
+	</script>
+</body>
+</html>

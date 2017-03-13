@@ -22,28 +22,27 @@ import org.slf4j.LoggerFactory;
 import org.sql2o.Sql2o;
 import org.sql2o.quirks.PostgresQuirks;
 
-import ca.dal.csci4145.team2.cors.CorsResponseFilter;
-import ca.dal.csci4145.team2.resources.MbrResource;
+import ca.dal.csci4145.team2.resources.ReResource;
 
 public class Main
 {
 	private static final DataSource datasource = getDataSource();
 	public static final Sql2o sql2o = new Sql2o(datasource, new PostgresQuirks());
-	
+
 	public static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-	
+
 	private static final DataSource getDataSource()
 	{
 		PGSimpleDataSource src = new PGSimpleDataSource();
 		src.setUser("csci4145");
 		src.setPassword("supersecret");
 		src.setPortNumber(5432);
-		src.setDatabaseName("mbr");
+		src.setDatabaseName("re");
 		return src;
 	}
 
 	private static final Logger log = LoggerFactory.getLogger(Main.class);
-	private static final String RESOURCE_PKG = MbrResource.class.getPackage().getName();
+	private static final String RESOURCE_PKG = ReResource.class.getPackage().getName();
 	public static final URI BASE_URI = UriBuilder.fromUri("http://0.0.0.0").port(8080).path("api")
 		.build();
 
@@ -54,8 +53,8 @@ public class Main
 			.register(ExceptionLogger.class)
 			.register(JacksonFeature.class)
 			.register(MultiPartFeature.class)
-			.register(CorsResponseFilter.class)
-			.register(LoggingFilter.class);
+			.register(LoggingFilter.class)
+			.register(new Binder());
 
 		return GrizzlyHttpServerFactory.createHttpServer(BASE_URI, rc);
 	}
