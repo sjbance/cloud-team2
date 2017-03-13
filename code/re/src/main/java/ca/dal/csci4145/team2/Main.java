@@ -2,7 +2,15 @@ package ca.dal.csci4145.team2;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.sql.DataSource;
 import javax.validation.Validation;
 import javax.validation.Validator;
@@ -28,6 +36,8 @@ public class Main
 {
 	private static final DataSource datasource = getDataSource();
 	public static final Sql2o sql2o = new Sql2o(datasource, new PostgresQuirks());
+
+	public static SSLContext noCheckSslContext;
 
 	public static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
@@ -59,8 +69,36 @@ public class Main
 		return GrizzlyHttpServerFactory.createHttpServer(BASE_URI, rc);
 	}
 
-	public static void main(String[] args) throws IOException
+	public static void main(String[] args)
+		throws IOException, NoSuchAlgorithmException, KeyManagementException
 	{
+		noCheckSslContext = SSLContext.getInstance("TLS");
+		TrustManager mgr = new X509TrustManager()
+		{
+
+			@Override
+			public void checkClientTrusted(X509Certificate[] arg0, String arg1)
+				throws CertificateException
+			{
+
+			}
+
+			@Override
+			public void checkServerTrusted(X509Certificate[] arg0, String arg1)
+				throws CertificateException
+			{
+
+			}
+
+			@Override
+			public X509Certificate[] getAcceptedIssuers()
+			{
+				return new X509Certificate[0];
+			}
+
+		};
+		noCheckSslContext.init(null, new TrustManager[] {mgr}, new SecureRandom());
+
 		Flyway fly = new Flyway();
 		fly.setDataSource(datasource);
 		fly.migrate();
