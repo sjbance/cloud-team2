@@ -17,6 +17,7 @@ const tableName = "MUN";
 const insPath = process.env.INS_PATH;
 const logPathStart = process.env.LOG_PATH + "/start";
 const logPathEnd = process.env.LOG_PATH + "/end";
+const verifyAuthPath = process.env.VERIFY_AUTH_PATH;
 
 // Send success JSON
 function sendSuccess(res, data){
@@ -118,7 +119,7 @@ router.delete("/service", function(req, res) {
 });
 
 // Send info to insurance web service
-router.post("/insurance", function(req, res){
+router.post("/insurance", getToken, function(req, res){
 	currStep = "Request from RE - sending information to INS service";
 	sendLog(currStep, true, req.body);
 	var params = {
@@ -130,7 +131,8 @@ router.post("/insurance", function(req, res){
 	getItem(res, params, function(data){
 		params = {
 				"mortId" : req.body.mortId,
-				"serviceCode" : data.serviceCode				
+				"serviceCode" : data.serviceCode,
+				"token" : req.body.token
 		}
 		request({url: insPath, method:"POST", json:params}, function(err, response, body){
 			if (err || response.statusCode != 200) {
@@ -161,22 +163,13 @@ function getItem(res, params, callback){
 function getToken(req, res, next){
 	var token = ((req.body && req.body.token) || (req.query && req.query.token));
 	if(token){
-		try {
-			var decoded = jwt.decode(token, process.env.SECRET);
-			var params = {
-					TableName : tableName,
-					Key : {
-						"id" : parseInt(decoded.id)
-					},
-				};
-			getItem(res, params, function(data){
-				req.user = data;
+		request({url: verifyAuthPath, method:"POST", json:{"token":token}}, function(err, response, body){
+			if (err || response.statusCode != 200) {
+				sendErr(res, "User not authorized");
+			} else {
 				next();
-			});
-		}
-		catch(err){
-			sendErr(res, err);			
-		}
+			}
+		});	
 	}
 	else{
 		sendErr(res, "User not authorized");

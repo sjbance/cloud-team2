@@ -43,7 +43,7 @@ public class ReResource
 	private final AuthCaller authCaller;
 	private final InsCaller insCaller;
 	private final MunCaller munCaller;
-	
+
 	@Inject
 	public ReResource(LogCaller logCaller, AuthCaller authCaller, InsCaller insCaller,
 		MunCaller munCaller)
@@ -53,42 +53,45 @@ public class ReResource
 		this.insCaller = insCaller;
 		this.munCaller = munCaller;
 	}
-	
+
 	@Inject
 	ContainerRequestContext request;
-	
+
 	public static class AppraisalReq
 	{
 		@NotBlank
 		public String houseId;
-		
+
 		@NotNull
 		public Integer mortId;
-		
+
 		@NotBlank
 		public String name;
 	}
-	
+
 	@POST
 	@Path("send")
 	public Response requestAppraisal(AppraisalReq req)
 	{
 		logCaller.logStart("Recieved appraisal request", req);
-		
+
 		User user = getUserOrThrow();
-		
+
 		throwIfInvalid(req);
-		
+
+		// We know this is non-empty since we already got the user
+		String token = getToken(request).get();
+
 		String sql = ""
 			+ "INSERT INTO appraisals "
 			+ "(user_id, house_id, mort_id, appraised_value) "
 			+ "values "
 			+ "(:uid, :hid, :mid, :val) "
 			+ "RETURNING id";
-		
+
 		double val = rand.nextGaussian() * 50_000 + 200_000;
 		val = Math.round(val * 100.0) / 100.0; // Only keep two decimals
-		
+
 		try (Connection con = Main.sql2o.open())
 		{
 			int id = con.createQuery(sql)
@@ -97,50 +100,54 @@ public class ReResource
 				.addParameter("mid", req.mortId)
 				.addParameter("val", val)
 				.executeScalar(Integer.class);
-			
+
 			InsReq insReq = new InsReq();
 			insReq.houseId = req.houseId;
 			insReq.mortId = req.mortId;
 			insReq.appraisedValue = val;
-			
+			insReq.token = token;
+
 			boolean insSuccess = insCaller.sendIns(insReq);
-			
+
 			MunReq munReq = new MunReq();
 			munReq.houseId = req.houseId;
 			munReq.mortId = req.mortId;
-			
+			munReq.token = token;
+
 			boolean munSuccess = munCaller.sendMun(munReq);
-			
+
 			String updateSql = ""
 				+ "UPDATE appraisals SET "
 				+ "ins_sent = :isuc, "
 				+ "mun_sent = :msuc "
 				+ "WHERE id = :id";
-			
+
 			con.createQuery(updateSql)
 				.addParameter("isuc", insSuccess)
 				.addParameter("msuc", munSuccess)
 				.addParameter("id", id)
 				.executeUpdate();
 		}
-		
+
+		logCaller.logEnd("Appraisal request submitted successfully");
+
 		return Response.ok().build();
 	}
-	
+
 	public <T> void throwIfInvalid(T obj)
 	{
 		if (obj == null) throw new BadRequestException();
-		
+
 		String err = Main.validator.validate(obj).stream()
 			.map(v -> msgForViol(v))
 			.collect(Collectors.joining(" "));
-		
+
 		if (err.isEmpty()) return;
 		Response resp = Response.status(400).entity(err).build();
 		logCaller.logEnd("Parameter validation failed");
 		throw new BadRequestException(resp);
 	}
-	
+
 	private String msgForViol(ConstraintViolation<?> viol)
 	{
 		Node last = null;
@@ -148,17 +155,17 @@ public class ReResource
 		{
 			last = obj;
 		}
-		
+
 		return String.format("Property '%s' %s. ", last.getName(), viol.getMessage());
 	}
-	
+
 	private User getUserOrThrow()
 	{
 		return getUser(request)
 			.orElseThrow(() -> new NotAuthorizedException(Response.status(401).build()));
 	}
-	
-	public Optional<User> getUser(ContainerRequestContext ctx)
+
+	public Optional<String> getToken(ContainerRequestContext ctx)
 	{
 		String header = ctx.getHeaderString("Authorization");
 		if (header == null)
@@ -173,9 +180,14 @@ public class ReResource
 			return Optional.empty();
 		}
 		String token = parts[1];
-		return authCaller.verify(token);
+		return Optional.of(token);
 	}
-	
+
+	public Optional<User> getUser(ContainerRequestContext ctx)
+	{
+		return getToken(ctx).flatMap(t -> authCaller.verify(t));
+	}
+
 	public static class Appraisal
 	{
 		public int id;
@@ -186,26 +198,26 @@ public class ReResource
 		public boolean insSent;
 		public boolean munSent;
 	}
-	
+
 	@GET
 	@Path("appraisals")
 	public List<Appraisal> getAppraisals()
 	{
 		logCaller.logStart("Getting appraisals", null);
-		
+
 		User user = getUserOrThrow();
-		
+
 		try (Connection con = Main.sql2o.open())
 		{
 			String sql = ""
 				+ "SELECT * FROM appraisals "
 				+ "WHERE user_id = :uid";
-			
+
 			List<Appraisal> apps = con.createQuery(sql)
 				.addParameter("uid", user.id)
 				.setAutoDeriveColumnNames(true)
 				.executeAndFetch(Appraisal.class);
-			
+
 			log.debug("Found {} applications", apps.size());
 			logCaller.logEnd("Retrieved appraisals");
 			return apps;
