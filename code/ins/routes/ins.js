@@ -117,26 +117,30 @@ router.post("/services", function(req, res){
 
 	var deductible = (mortgage.appraisedValue * .01).toString();
 	deductible = deductible.slice(0, deductible.length - 2) + '.' + deductible.slice(-2);
+
 	console.log("deductible set");
 
 	params = {
 		"token" : req.body.token,
-		"mortId" : parseInt(req.body.mortId),
+		"mortId" : 1,
 		"insuredValue" : insuredValue,
 		"deductible" : deductible,
-		"name" : ""
+		"name" : "bob"
 		};
+
 	console.log("sending request to MBR");
+
 	request({url: mbrPath + "/insurer", method:"POST", json:params}, function(err, response, body){
 		if (err || response.statusCode != 200) {
 			sendErr(res, "Error received from MBR" + " - " + err + " - " + response.statusCode + " - " + "params: " + JSON.stringify(params));
+			console.log(params);
 		} else {
 			sendSuccess(res);
 		}
 	});
+
 		}
 	});
-
 
 });
 
@@ -185,7 +189,7 @@ function getToken(req, res, next){
 function sendLog(message, start, params){
 	var data = {
 			"message" : message,
-			"source" : "MUN"
+			"source" : "INS"
 	};
 	if(params){
 		data["params"] = params;
