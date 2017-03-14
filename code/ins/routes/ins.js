@@ -111,16 +111,17 @@ router.post("/services", function(req, res){
 
 
 
-			var insuredValue = (mortgage.appraisedValue * .65).toString();
+	var insuredValue = (mortgage.appraisedValue * .65).toString();
 
-			insuredValue = insuredValue.slice(0, insuredValue.length - 2) + '.' + insuredValue.slice(-2);
+	insuredValue = insuredValue.slice(0, insuredValue.length - 2) + '.' + insuredValue.slice(-2);
 
-			var deductible = (mortgage.appraisedValue * .01).toString();
-			deductible = deductible.slice(0, deductible.length - 2) + '.' + deductible.slice(-2);
-			console.log("deductible set");
+	var deductible = (mortgage.appraisedValue * .01).toString();
+	deductible = deductible.slice(0, deductible.length - 2) + '.' + deductible.slice(-2);
+	console.log("deductible set");
+
 	params = {
 		"token" : req.body.token,
-		"mortId" : req.body.mortId,
+		"mortId" : parseInt(req.body.mortId),
 		"insuredValue" : insuredValue,
 		"deductible" : deductible,
 		"name" : ""
@@ -128,7 +129,7 @@ router.post("/services", function(req, res){
 	console.log("sending request to MBR");
 	request({url: mbrPath + "/insurer", method:"POST", json:params}, function(err, response, body){
 		if (err || response.statusCode != 200) {
-			sendErr(res, "Error received from MBR" + " - " + err + " - " + response.statusCode);
+			sendErr(res, "Error received from MBR" + " - " + err + " - " + response.statusCode + " - " + "params: " + JSON.stringify(params));
 		} else {
 			sendSuccess(res);
 		}
