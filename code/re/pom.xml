@@ -6,7 +6,7 @@
 	<groupId>ca.dal.csci4145.team2</groupId>
 	<artifactId>re</artifactId>
 	<packaging>jar</packaging>
-	<version>1.2</version>
+	<version>1.3</version>
 	<name>re</name>
 
 	<dependencyManagement>

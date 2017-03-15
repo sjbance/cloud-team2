@@ -116,14 +116,26 @@ public class MbrResource
 	
 	private User getUserOrThrow(String token)
 	{
-		return AuthResource.getUser(token)
-			.orElseThrow(() -> new NotAuthorizedException(Response.status(401).build()));
+		Optional<User> u = AuthResource.getUser(token);
+		if (u.isPresent())
+		{
+			return u.get();
+		}
+
+		LogResource.logEndInternal("MBR", "User not authorized");
+		throw new NotAuthorizedException(Response.status(401).build());
 	}
 	
 	private User getUserOrThrow()
 	{
-		return getUser(request)
-			.orElseThrow(() -> new NotAuthorizedException(Response.status(401).build()));
+		Optional<User> u = getUser(request);
+		if (u.isPresent())
+		{
+			return u.get();
+		}
+
+		LogResource.logEndInternal("MBR", "User not authorized");
+		throw new NotAuthorizedException(Response.status(401).build());
 	}
 	
 	public static Optional<User> getUser(ContainerRequestContext ctx)
@@ -240,23 +252,22 @@ public class MbrResource
 	{
 		LogResource.logStartInternal("MBR", "Received Employer info", req);
 		log.debug("Received employer info: {}", StringUtils.makeToString(req));
-		
+
 		try (Connection con = Main.sql2o.open())
 		{
 			String sql = ""
 				+ "UPDATE applications SET "
 				+ "salary = :salary, "
 				+ "start_of_employment = :stofempl "
-				+ "WHERE id = :mortid AND "
-				+ "user_id = :uid";
-			
+				+ "WHERE id = :mortid";
+
 			int updated = con.createQuery(sql)
 				.addParameter("salary", req.salary)
 				.addParameter("stofempl", req.startOfEmployment)
 				.addParameter("mortid", req.mortId)
 				.executeUpdate()
 				.getResult();
-			
+
 			log.debug("Updated {} rows", updated);
 			boolean ok = updated == 1;
 			LogResource.logEndInternal("MBR", "Employer info stored in DB successfully: " + ok);
