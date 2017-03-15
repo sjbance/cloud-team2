@@ -16,6 +16,7 @@ const tableName = "INS";
 const mbrPath = process.env.MBR_PATH;
 const logPathStart = process.env.LOG_PATH + "/start";
 const logPathEnd = process.env.LOG_PATH + "/end";
+const verifyAuthPath = process.env.VERIFY_AUTH_PATH;
 
 // Send success JSON
 function sendSuccess(res, data){
