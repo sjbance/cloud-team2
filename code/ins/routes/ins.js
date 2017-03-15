@@ -36,7 +36,7 @@ function sendErr(res, err) {
 	});
 }
 // Receive info from RE
-router.post("/insurance_quote", function(req, res){
+router.post("/insurance_quote", getToken, function(req, res){
 	currStep = "POST from RE - saving mortgage data";
 	sendLog(currStep, true, req.body);
 
@@ -70,7 +70,7 @@ router.post("/insurance_quote", function(req, res){
 });
 
 // Receive info from MUN, send data to MBR
-router.post("/services", function(req, res){
+router.post("/services", getToken, function(req, res){
 	currStep = "POST from MUN - sending to MBR";
 	sendLog(currStep, true, req.body);
 
@@ -145,6 +145,22 @@ function getItem(res, params, callback) {
             callback(data.Item);
         }
     });
+}
+
+function getToken(req, res, next){
+	var token = ((req.body && req.body.token) || (req.query && req.query.token));
+	if(token){
+		request({url: verifyAuthPath, method:"POST", json:{"token":token}}, function(err, response, body){
+			if (err || response.statusCode != 200) {
+				sendErr(res, "User not authorized");
+			} else {
+				next();
+			}
+		});
+	}
+	else{
+		sendErr(res, "User not authorized");
+	}
 }
 
 
