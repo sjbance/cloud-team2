@@ -35,22 +35,24 @@ function sendErr(res, err) {
 		error: err
 	});
 }
-
-router.post("/", function(req, res){
-});
 // Receive info from RE
 router.post("/insurance_quote", function(req, res){
 	currStep = "POST from RE - saving mortgage data";
 	sendLog(currStep, true, req.body);
 
-	av = req.body.appraisedValue.split('.');
-	appraisedValue = parseInt(av[0]) * 100 + parseInt(av[1]);
+	if(!(req.body.appraisedValue && req.body.houseId && req.body.token)){
+		sendErr(res, "Missing essential attribute.");
+		return;
+	}
+
+	// av = req.body.appraisedValue.split('.');
+	// appraisedValue = parseInt(av[0]) * 100 + parseInt(av[1]);
 	var params = {
 			TableName : tableName,
 			Item : {
-				"mortId" : parseInt(req.body.mortId),
+				"mortId" : req.body.mortId,
 				"houseId" : req.body.houseId,
-				"appraisedValue" : appraisedValue,
+				"appraisedValue" : req.body.appraisedValue,
 				"token" : req.body.token
 			}
 
@@ -72,9 +74,14 @@ router.post("/services", function(req, res){
 	currStep = "POST from MUN - sending to MBR";
 	sendLog(currStep, true, req.body);
 
+	if(!(req.body.serviceCode && req.body.mortId && req.body.token)){
+		sendErr(res, "Missing essential attribute.");
+		return;
+	}
+
 
 	serviceCode = req.body.serviceCode;
-	mortId = parseInt(req.body.mortId);
+	mortId = req.body.mortId;
 	var mortgage;
 
 	var params = {
@@ -94,11 +101,14 @@ router.post("/services", function(req, res){
 		}
 		else {
 			mortgage = data.Item;
+			var insuredValue = mortgage.appraisedValue * .65;
+			var deductible = mortgage.appraisedValue * .10;
+			/*
 			var insuredValue = (mortgage.appraisedValue * .65).toString();
 			insuredValue = insuredValue.slice(0, insuredValue.length - 2) + '.' + insuredValue.slice(-2);
 			var deductible = (mortgage.appraisedValue * .01).toString();
 			deductible = deductible.slice(0, deductible.length - 2) + '.' + deductible.slice(-2);
-
+			*/
 
 	params = {
 		"token" : req.body.token,
