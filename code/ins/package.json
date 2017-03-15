@@ -1,24 +1,29 @@
 {
-  "name": "MUN",
-  "version": "0.0.1",
-  "private": true,
-  "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
-  },
+  "name": "ins",
+  "version": "1.0.0",
+  "description": "Insurance Company NodeJS Web Service",
+  "main": "app.js",
   "dependencies": {
-    "aws-sdk": "^2.9.0",
-    "body-parser": "^1.16.0",
-    "dotenv": "^4.0.0",
-    "ejs": "*",
-    "express": "^4.14.0",
-    "jquery": "^3.1.1",
     "jwt-simple": "^0.5.1",
-    "morgan": "^1.7.0",
-    "multer": "^1.2.1",
-    "request": "^2.79.0"
+    "express": "^4.15.2",
+    "request": "^2.81.0",
+    "aws-sdk": "^2.27.0",
+    "dotenv": "^4.0.0",
+    "https": "^1.0.0",
+    "morgan": "^1.8.1",
+    "body-parser": "^1.17.1",
+    "dotenv": "^4.0.0"},
+  "devDependencies": {},
+  "scripts": {
+    "start": "nodejs app.js"
   },
-  "devDependencies": {
-    "nodemon": "^1.11.0"
-  }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sjbance/cloud-team2.git"
+  },
+  "author": "Daniel Bak",
+  "bugs": {
+    "url": "https://github.com/sjbance/cloud-team2/issues"
+  },
+  "homepage": "https://github.com/sjbance/cloud-team2#readme"
 }
