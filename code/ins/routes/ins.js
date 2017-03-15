@@ -113,7 +113,7 @@ router.post("/services", getToken, function(req, res){
 
 	params = {
 		"token" : req.body.token,
-		"mortId" : 1,
+		"mortId" : req.body.mortId,
 		"insuredValue" : insuredValue,
 		"deductible" : deductible,
 		"name" : "bob"
