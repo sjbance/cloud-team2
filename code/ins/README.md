@@ -1,13 +1,29 @@
-REQUIREMENTS:
-Node.js (https://nodejs.org/)
-npm (https://www.npmjs.com/)
+Requirements:
 
-SETUP:
-To use a specific AWS account, change the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY .env file variables. To use a specific port, change the PORT variable.
+    Node.js
+    NPM
+    Node packages in package.json
 
-TO RUN:
-- Navigate to root folder
-- Run 'npm install'
-- Run 'node app.js' 
 
-App will run on port 3001 if none is specified.
+Setup:
+
+    .env:
+
+    Modify the AWS keys to represent your AWS account
+    Set PORT to a port number (default is 3001).
+
+    Advanced:
+
+    Set the PATH environmental variables to the MBR, Log and Auth web services.
+
+
+Running:
+
+    run: "nodejs app.js"
+
+
+SSL information:
+
+    Passphrase is 4145.
+
+    If certificates have expired, run "openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365" in the ssl directory.
