@@ -10,7 +10,6 @@ Setup:
     .env:
 
     Modify the AWS keys to represent your AWS account
-    Set PORT to a port number (default is 3001).
 
     Advanced:
 
@@ -21,8 +20,10 @@ Running:
 
     run: "nodejs app.js"
 
+    Service will run on port 3001.
 
-SSL information:
+
+Security information:
 
     Passphrase is 4145.
 
