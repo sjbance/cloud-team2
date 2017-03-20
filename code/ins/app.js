@@ -48,6 +48,7 @@ var sslOptions = {
 
 
 app.post("/ins/insurance_quote", function(req, res){
+    console.log("Received insurance quote POST request from RE.");
     sendLog(true, true, "Received insurance quote POST request from RE.", {}, res);
     mortId = parseInt(req.body.mortId);
     token = req.body.token;
@@ -56,11 +57,12 @@ app.post("/ins/insurance_quote", function(req, res){
 
 
 
-    if(!(req.body.serviceCode && req.body.mortId && req.body.token)){
+    if(!(req.body.houseId && req.body.mortId && req.body.token && req.body.appraisedValue)){
         sendLog(false, false, "Service request missing needed parameter.", {}, res);
         return;
     }
 
+    console.log("before params");
     var params = {
         TableName : tableName,
         Item : {
@@ -71,7 +73,7 @@ app.post("/ins/insurance_quote", function(req, res){
         }
 
     };
-
+    console.log("before docClient");
     docClient.put(params, function(err, data){
         if (err){
             sendLog(false, false, "Could not put into DB.", {"error": err}, res);
@@ -88,7 +90,7 @@ app.post("/ins/insurance_quote", function(req, res){
 
 
 app.post("/ins/services", function(req, res){
-    console.log('85');
+    console.log("Received services POST request.");
     sendLog(true, true, "Received services data from MUN", {}, res);
     console.log(req.body);
     serviceCode = req.body.serviceCode;
@@ -110,9 +112,11 @@ app.post("/ins/services", function(req, res){
 
     docClient.get(params, function(err, data){
         if (err){
+            console.log("docclient failed");
             sendLog(false, false, "Could not find an entry with that mortId and token.", {"error": err}, res);
         }
         else if(!data || !data.Item){
+            console.log("no data");
             sendLog(false, false, "docClient did not find data.", {"error": err}, res);
         }
         else{
@@ -130,14 +134,17 @@ app.post("/ins/services", function(req, res){
                 "token" : token
             };
             console.log('before request');
-            request.post({url: mbrPath, json: params}, function(err, response){
+            console.log("params to MBR:");
+            console.log(params);
+            request.post({url: mbrPath + '/insurer', json: params}, function(err, response){
                 if (err){
                     console.log("failed to communicate with MBR");
                     sendLog(false, false, "Communication with MBR returned an error", {"error": err, "response": response}, res)
                 }
                 else{
                     console.log("Communicated with MBR");
-                    sendLog(false, true, "POST to MBR successful", params, res);
+                    console.log(params);
+                    sendLog(false, true, "POST to MBR successful", {}, res);
                 }
             });
         }
@@ -153,6 +160,7 @@ console.log("Listening on 3001");
 
 
 function sendLog(is_start, is_successful, message, params, res){
+    console.log(res);
 
 
     source = "INS";
@@ -167,14 +175,17 @@ function sendLog(is_start, is_successful, message, params, res){
         "params": params,
         "source": "INS"
     };
-    request.post({url: logPath, json:data});
-
+    console.log("before log request!");
+    console.log(data);
+    request.post({"url": logPath, json:{}}, function(err, response){
+        console.log(err);
+    });
+    console.log("after log request");
     // Portions of this taken from emp
 
     if (!is_start){
         if (is_successful == false) {
             console.log("not successful");
-            console.log(params);
             res.status(500).json({
                 success: false,
                 error: params["error"],
@@ -182,10 +193,11 @@ function sendLog(is_start, is_successful, message, params, res){
             });
         }
         else {
+            console.log("it's successful");
             res.status(200).json({
                 success: true,
                 data: data
-            })
+            });
 
         }
     }
